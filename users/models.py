@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 
 # Create your models here.
-
 class UserManager(BaseUserManager):
     def create_user(self, email, password):
         if not email:
@@ -22,7 +21,7 @@ class UserManager(BaseUserManager):
         return user
 
 class User(AbstractBaseUser):
-    email = models.EmailField(max_length=255, unique=True)
+    email = models.EmailField(max_length=255, unique=True, null=False)
     is_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
