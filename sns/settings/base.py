@@ -41,6 +41,14 @@ SECRET_KEY = get_secret("SECRET_KEY")
 
 
 # Application definition
+APPS = [
+    'users',
+    'posts'
+]
+
+THIRD_PARTIES = [
+    'rest_framework'
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -49,7 +57,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-]
+] + APPS + THIRD_PARTIES
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -92,6 +102,8 @@ DATABASES = {
     }
 }
 
+# AUTH_USER_MODEL
+AUTH_USER_MODEL = 'users.USER'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
