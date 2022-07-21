@@ -47,7 +47,7 @@ APPS = [
 ]
 
 THIRD_PARTIES = [
-    'rest_framework'
+    'rest_framework',
 ]
 
 INSTALLED_APPS = [
