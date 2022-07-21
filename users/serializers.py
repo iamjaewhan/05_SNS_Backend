@@ -3,6 +3,7 @@ from rest_framework.serializers import ModelSerializer
 
 
 class CreateUserSerializer(ModelSerializer):
+class UserSignupSerializer(ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ('email', 'password') 
