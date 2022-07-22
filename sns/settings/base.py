@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
+from datetime import timedelta
 
 import os, json
 
@@ -41,6 +42,15 @@ SECRET_KEY = get_secret("SECRET_KEY")
 
 
 # Application definition
+APPS = [
+    'users',
+    'posts',
+]
+
+THIRD_PARTIES = [
+    'rest_framework',
+    'rest_framework_simplejwt',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -49,7 +59,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-]
+] + APPS + THIRD_PARTIES
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -92,6 +104,24 @@ DATABASES = {
     }
 }
 
+# AUTH_USER_MODEL
+AUTH_USER_MODEL = 'users.USER'
+
+#REST_FRAMEWORK
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+# JWT_AUTH settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'UPDATE_LAST_LOGIN': False,
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
