@@ -48,4 +48,11 @@ class Post(SoftDeletionModel):
     hashtag = models.ManyToManyField(Hashtag, through='PostHashtag', related_name='hashtag_list')
     view_count = models.IntegerField(null=False, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
+    modified_at = models.DateTimeField(auto_now=True)class PostHashtag(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    hashtag = models.ForeignKey(Hashtag, on_delete=models.CASCADE)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['post', 'hashtag'], name='unique_post_hashtag'),
+        ]
