@@ -50,6 +50,7 @@ APPS = [
 THIRD_PARTIES = [
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_db_views',
 ]
 
 INSTALLED_APPS = [
