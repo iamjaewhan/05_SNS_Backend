@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django_db_views.db_view import DBView
 
 # Create your models here.
 class SoftDeleteManager(models.Manager):
@@ -59,3 +60,17 @@ class PostHashtag(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['post', 'hashtag'], name='unique_post_hashtag'),
         ]
+
+
+class PostHashtagSetView(DBView):
+    post = models.ForeignKey(Post, on_delete=models.DO_NOTHING)
+    tags = models.TextField()
+    view_definition = """
+        SELECT row_number() over () as id, ph.post_id as post_id, group_concat(ht.tag) as tags
+        FROM posts_posthashtag as ph, posts_hashtag as ht
+        WHERE ph.hashtag_id=ht.id
+        group by ph.post_id
+    """
+    
+    class Meta:
+        managed = False
