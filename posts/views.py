@@ -8,7 +8,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from users.serializers import BaseUserSerializer
-
 from .serializers import *
 from .models import *
 from .utils.permissions import *
@@ -45,5 +44,16 @@ class PostDetailAPI(APIView):
             post_queryset = Post.objects.get(pk=post_id)
             serializer = PostSerializer(post_queryset)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        except Post.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    
+    @transaction.atomic()
+    def delete(self, request, post_id):
+        try:
+            post = Post.objects.get(pk=post_id)
+            if self.check_object_permissions(request, post):
+                post.delete()
+                return Response(status=status.HTTP_200_OK)
+            return Response( status=status.HTTP_401_UNAUTHORIZED)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
