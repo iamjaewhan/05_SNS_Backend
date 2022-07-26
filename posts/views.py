@@ -114,3 +114,17 @@ class PostDetailAPI(APIView):
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
     
+class LikeUserPostAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic()
+    def put(self, request, post_id):
+        like_queryset = LikeUserPost.objects.filter(user=request.user.id, post=post_id)
+        if len(like_queryset) > 0:
+            like_queryset.delete()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            LikeUserPost.objects.create(user=request.user.id, post=post.id)
+            return Response(status=status.HTTP_201_CREATED)
+        
+
