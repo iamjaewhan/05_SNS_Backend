@@ -30,16 +30,7 @@ class PostSerializer(ModelSerializer):
         fields = ('id', 'user', 'hashtag', 'title', 'content' , 'view_count', 'created_at' , 'modified_at')
         depth = 1            
         
-        
-class PostHashtagSerializer(ModelSerializer):
-    post = PostSerializer()
-    hashtag = HashtagSerializer
-    
-    class Meta:
-        model = PostHashtag
-        fields = '__all__'
-        depth = 2
-        
+
         
 
         
