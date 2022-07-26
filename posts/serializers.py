@@ -27,7 +27,7 @@ class PostSerializer(ModelSerializer):
         
     class Meta:
         model = Post
-        fields = '__all__'
+        fields = ('id', 'user', 'hashtag', 'title', 'content' , 'view_count', 'created_at' , 'modified_at')
         depth = 1            
         
         
