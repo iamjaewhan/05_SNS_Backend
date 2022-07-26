@@ -57,6 +57,25 @@ class PostDetailAPI(APIView):
             return Response( status=status.HTTP_401_UNAUTHORIZED)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @transaction.atomic()
+    def patch(self, request, post_id):
+        try:
+            post = Post.objects.get(pk=post_id)
+            if self.check_object_permissions(request, post):
+                post.title = request.data.get('title', post.title)
+                post.content = request.data.get('content', post.content)  
+                post.hashtag.clear()
+                for hashtag in request.data['hashtag']:
+                    new_tag, is_created = Hashtag.objects.get_or_create(tag=hashtag)
+                    post.hashtag.add(new_tag)
+                post.save()
+                serializer = PostSerializer(post)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        except Post.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
     @transaction.atomic()
     def put(self, request, post_id):
         try:
