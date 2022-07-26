@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -34,3 +35,15 @@ class PostListAPI(APIView):
         new_post.save()
         serializer = PostSerializer(new_post)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PostDetailAPI(APIView):
+    permission_classes = [IsOwnerOrReadOnly]
+    
+    def get(self, request, post_id):
+        try:
+            post_queryset = Post.objects.get(pk=post_id)
+            serializer = PostSerializer(post_queryset)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Post.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
