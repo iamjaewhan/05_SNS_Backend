@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.db import transaction
+from django.db.models import Q
+from django.core.paginator import Paginator
 from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import status
@@ -12,16 +14,40 @@ from .serializers import *
 from .models import *
 from .utils.permissions import *
 
-
 # Create your views here.
 class PostListAPI(APIView):
     serializer_class = PostSerializer
     
     def get(self, request):
-        res = {}
-        post_queryset = Post.objects.all()
-        serializer = PostSerializer(post_queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        #해시태그 필터링
+        filter_condition = Q()
+        
+        if 'filtering' in request.GET.keys():
+            filter_tags = request.GET['filtering'].split(',')
+            filter_tags = list(map(lambda x:'^([0-9a-zA-Z]+\,)*%s(,[0-9a-zA-Z]+)*$'%x, filter_tags))
+            for tag in filter_tags:
+                filter_condition.add(Q(tags__iregex=tag), Q.AND)
+            
+        post_hashtag_queryset = PostHashtagSetView.objects.filter(filter_condition)
+        
+        if 'searching' in request.GET.keys():
+            searching_key = request.GET['searching']
+            post_hashtag_queryset = post_hashtag_queryset.filter(Q(post__title__icontains=searching_key)|Q(post__content__icontains=searching_key))
+       
+        post_objs = list(map(lambda x:x.post, post_hashtag_queryset))[::-1]
+
+        serializer = PostSerializer(post_objs, many=True)
+        p = Paginator(serializer.data, request.GET.get('pagination', 10))
+        requested_page = p.get_page(request.GET.get('page',1))
+        res = {
+            "current_page":requested_page.number,
+            "previous_page":requested_page.previous_page_number() if requested_page.has_previous() else requested_page.start_index(),
+            "next_page": requested_page.next_page_number() if requested_page.has_next() else requested_page.end_index(), 
+            "posts":requested_page.object_list
+        }
+        return Response(res, status=status.HTTP_200_OK)
+        
+    
     @transaction.atomic()
     def post(self, request):
         permission_classes = [IsAuthenticated]
