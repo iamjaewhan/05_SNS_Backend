@@ -57,3 +57,15 @@ class PostDetailAPI(APIView):
             return Response( status=status.HTTP_401_UNAUTHORIZED)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+    @transaction.atomic()
+    def put(self, request, post_id):
+        try:
+            post = Post.deleted_objects.get(pk=post_id)
+            if self.check_object_permissions(request, post):
+                post.restore()
+                serializer = PostSerializer(post)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        except Post.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    
