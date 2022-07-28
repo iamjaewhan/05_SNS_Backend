@@ -58,20 +58,20 @@ class PostListAPI(APIView):
         except Exception as e:
             return Response({"message" : e.message}, status=status.HTTP_400_BAD_REQUEST)
         
-    
-    @transaction.atomic()
     def post(self, request):
-        permission_classes = [IsAuthenticated]
-        
-        posted_user = get_user_model().objects.get(pk=request.user.id)
-        new_post = Post.objects.create(title=request.data['title'], content=request.data['content'], user=posted_user)
-        for hashtag in request.data['hashtag']:
-            new_tag, is_created = Hashtag.objects.get_or_create(tag=hashtag)
-            new_post.hashtag.add(new_tag)
-        new_post.save()
-        serializer = PostSerializer(new_post)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            with transaction.atomic():
+                posted_user = get_user_model().objects.get(pk=request.user.id)
+                new_post = Post.objects.create(title=request.data['title'], content=request.data['content'], user=posted_user)
                 hashtags = HashtagFormatter.hashtag_to_list(request.data['hashtags'])
+                for hashtag in hashtags:
+                    new_tag, is_created = Hashtag.objects.get_or_create(tag=hashtag)
+                    new_post.hashtag.add(new_tag)
+                new_post.save()
+                serializer = PostSerializer(new_post)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"message" : e.message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PostDetailAPI(APIView):
