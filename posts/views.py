@@ -6,8 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from users.serializers import BaseUserSerializer
 from .serializers import *
@@ -17,6 +17,7 @@ from .utils.permissions import *
 # Create your views here.
 class PostListAPI(APIView):
     serializer_class = PostSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
     
     def get(self, request):
         #해시태그 필터링
