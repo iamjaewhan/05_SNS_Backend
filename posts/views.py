@@ -12,7 +12,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from users.serializers import BaseUserSerializer
 from .serializers import *
 from .models import *
-from .utils.permissions import *
+from .utils.permissions import IsOwnerOrReadOnly
+from .utils.hashtag_format import HashtagFormatter
 
 # Create your views here.
 class PostListAPI(APIView):
@@ -23,11 +24,6 @@ class PostListAPI(APIView):
         #해시태그 필터링
         filter_condition = Q()
         
-        if 'filtering' in request.GET.keys():
-            filter_tags = request.GET['filtering'].split(',')
-            filter_tags = list(map(lambda x:'^([0-9a-zA-Z]+\,)*%s(,[0-9a-zA-Z]+)*$'%x, filter_tags))
-            for tag in filter_tags:
-                filter_condition.add(Q(tags__iregex=tag), Q.AND)
             
         post_hashtag_queryset = PostHashtagSetView.objects.filter(filter_condition)
         
@@ -47,6 +43,10 @@ class PostListAPI(APIView):
             "posts":requested_page.object_list
         }
         return Response(res, status=status.HTTP_200_OK)
+            if request.GET.get('filtering', None):
+                filter_tags = HashtagFormatter.words_to_regex(request.GET['filtering'])
+                for tag in filter_tags:
+                    filter_condition.add(Q(tags__iregex=tag), Q.AND)
         
     
     @transaction.atomic()
@@ -61,6 +61,7 @@ class PostListAPI(APIView):
         new_post.save()
         serializer = PostSerializer(new_post)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+                hashtags = HashtagFormatter.hashtag_to_list(request.data['hashtags'])
 
 
 class PostDetailAPI(APIView):
