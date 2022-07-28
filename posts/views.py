@@ -76,12 +76,15 @@ class PostListAPI(APIView):
 
 class PostDetailAPI(APIView):
     permission_classes = [IsOwnerOrReadOnly]
-    
+
     def get(self, request, post_id):
         try:
-            post_queryset = Post.objects.get(pk=post_id)
-            serializer = PostSerializer(post_queryset)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            with transaction.atomic():
+                post = Post.objects.get(pk=post_id)
+                post.view_count += 1
+                post.save()
+                serializer = PostSerializer(post)
+                return Response(serializer.data, status=status.HTTP_200_OK)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
     
