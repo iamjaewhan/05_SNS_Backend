@@ -3,3 +3,4 @@ django-allauth==0.51.0
 django-rest-auth==0.9.5
 djangorestframework==3.13.1
 djangorestframework-jwt==1.11.0
+django-db-views==0.1.2
