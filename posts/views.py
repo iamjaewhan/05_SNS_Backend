@@ -22,31 +22,41 @@ class PostListAPI(APIView):
     
     def get(self, request):
         #해시태그 필터링
-        filter_condition = Q()
-        
-            
-        post_hashtag_queryset = PostHashtagSetView.objects.filter(filter_condition)
-        
-        if 'searching' in request.GET.keys():
-            searching_key = request.GET['searching']
-            post_hashtag_queryset = post_hashtag_queryset.filter(Q(post__title__icontains=searching_key)|Q(post__content__icontains=searching_key))
-       
-        post_objs = list(map(lambda x:x.post, post_hashtag_queryset))[::-1]
+        try:
+            filter_condition = Q()
+            filter_condition.add(Q(post__is_deleted=0), Q.AND)
 
-        serializer = PostSerializer(post_objs, many=True)
-        p = Paginator(serializer.data, request.GET.get('pagination', 10))
-        requested_page = p.get_page(request.GET.get('page',1))
-        res = {
-            "current_page":requested_page.number,
-            "previous_page":requested_page.previous_page_number() if requested_page.has_previous() else requested_page.start_index(),
-            "next_page": requested_page.next_page_number() if requested_page.has_next() else requested_page.end_index(), 
-            "posts":requested_page.object_list
-        }
-        return Response(res, status=status.HTTP_200_OK)
             if request.GET.get('filtering', None):
                 filter_tags = HashtagFormatter.words_to_regex(request.GET['filtering'])
                 for tag in filter_tags:
                     filter_condition.add(Q(tags__iregex=tag), Q.AND)
+
+            post_hashtag_queryset = PostHashtagSetView.objects.filter(filter_condition)
+
+            if request.GET.get('searching', None):
+                searching_key = request.GET['searching']
+                post_hashtag_queryset = post_hashtag_queryset.filter(Q(post__title__icontains=searching_key)|Q(post__content__icontains=searching_key))
+
+            post_objs = list(map(lambda x:x.post, post_hashtag_queryset))
+
+            if request.GET.get('ordering', None):
+                if request.GET.get('ordering') == 'views':
+                    post_objs.sort(key=lambda x:(-x.view_count, x.id))
+                elif request.GET.get('ordering') == 'date':
+                    post_objs.sort(key=lambda x:(-x.id))
+
+            serializer = PostSerializer(post_objs, many=True)
+            p = Paginator(serializer.data, request.GET.get('pagination', 10))
+            requested_page = p.get_page(request.GET.get('page',1))
+            res = {
+                "current_page":requested_page.number,
+                "previous_page":requested_page.previous_page_number() if requested_page.has_previous() else requested_page.start_index(),
+                "next_page": requested_page.next_page_number() if requested_page.has_next() else requested_page.end_index(), 
+                "posts":requested_page.object_list
+            }
+            return Response(res, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message" : e.message}, status=status.HTTP_400_BAD_REQUEST)
         
     
     @transaction.atomic()
