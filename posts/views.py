@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 
 from users.serializers import BaseUserSerializer
 from .serializers import *
@@ -87,25 +87,24 @@ class PostDetailAPI(APIView):
                 return Response(serializer.data, status=status.HTTP_200_OK)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-    
-    @transaction.atomic()
+
     def delete(self, request, post_id):
         try:
-            post = Post.objects.get(pk=post_id)
-            if self.check_object_permissions(request, post):
+            with transaction.atomic():
+                post = Post.objects.get(pk=post_id)
+                self.check_object_permissions(request, post)
                 post.delete()
                 return Response(status=status.HTTP_200_OK)
-            return Response( status=status.HTTP_401_UNAUTHORIZED)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    @transaction.atomic()
     def patch(self, request, post_id):
         try:
-            post = Post.objects.get(pk=post_id)
-            if self.check_object_permissions(request, post):
+            with transaction.atomic():
+                post = Post.objects.get(pk=post_id)
+                self.check_object_permissions(request, post)
                 post.title = request.data.get('title', post.title)
-                post.content = request.data.get('content', post.content)  
+                post.content = request.data.get('content', post.content)
                 post.hashtag.clear()
                 for hashtag in request.data['hashtag']:
                     new_tag, is_created = Hashtag.objects.get_or_create(tag=hashtag)
@@ -113,33 +112,34 @@ class PostDetailAPI(APIView):
                 post.save()
                 serializer = PostSerializer(post)
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    @transaction.atomic()
     def put(self, request, post_id):
         try:
-            post = Post.deleted_objects.get(pk=post_id)
-            if self.check_object_permissions(request, post):
+            with transaction.atomic():
+                post = Post.deleted_objects.get(pk=post_id)
+                self.check_object_permissions(request, post)
                 post.restore()
                 serializer = PostSerializer(post)
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
         except Post.DoesNotExist:
             return Response(status=status.HTTP_400_BAD_REQUEST)
     
 class LikeUserPostAPI(APIView):
     permission_classes = [IsAuthenticated]
 
-    @transaction.atomic()
     def put(self, request, post_id):
-        like_queryset = LikeUserPost.objects.filter(user=request.user.id, post=post_id)
-        if len(like_queryset) > 0:
-            like_queryset.delete()
-            return Response(status=status.HTTP_200_OK)
-        else:
-            LikeUserPost.objects.create(user=request.user.id, post=post.id)
-            return Response(status=status.HTTP_201_CREATED)
+        try:
+            with transaction.atomic():
+                like_queryset = LikeUserPost.objects.filter(user=request.user.id, post=post_id)
+                if len(like_queryset) > 0:
+                    like_queryset.delete()
+                    return Response(status=status.HTTP_200_OK)
+                else:
+                    LikeUserPost.objects.create(user=request.user.id, post=post.id)
+                    return Response(status=status.HTTP_201_CREATED)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         
 
